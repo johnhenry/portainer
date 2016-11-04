@@ -59,6 +59,18 @@ module.exports = function (grunt) {
         'recess:min',
         'copy'
     ]);
+    grunt.registerTask('release-mac', [
+        'clean:all',
+        'if:macNotExist',
+        'html2js',
+        'uglify',
+        'clean:tmpl',
+        'jshint',
+        //'karma:unit',
+        'concat:index',
+        'recess:min',
+        'copy'
+    ]);
     grunt.registerTask('lint', ['jshint']);
     grunt.registerTask('test-watch', ['karma:watch']);
     grunt.registerTask('run', ['if:unixBinaryNotExist', 'build', 'shell:buildImage', 'shell:run']);
@@ -303,6 +315,14 @@ module.exports = function (grunt) {
                     'mv api/portainer-windows-amd64 dist/portainer.exe'
                 ].join(' && ')
             },
+            buildMacBinary:{
+                command: [
+                    'docker run --rm -v $(pwd)/api:/src -e BUILD_GOOS="darwin" -e BUILD_GOARCH="amd64" centurylink/golang-builder-cross',
+                    'shasum api/portainer-darwin-amd64 > portainer-checksum.txt',
+                    'mkdir -p dist',
+                    'mv api/portainer-darwin-amd64 dist/portainer'
+                ].join(' && ')
+            },
             run: {
                 command: [
                     'docker stop portainer',
@@ -346,6 +366,12 @@ module.exports = function (grunt) {
                   executable: 'dist/portainer.exe'
               },
               ifFalse: ['shell:buildWindowsBinary']
+            },
+            macNotExist: {
+              options: {
+                  executable: 'dist/portainer'
+              },
+              ifFalse: ['shell:buildMacBinary']
             }
         }
     });
